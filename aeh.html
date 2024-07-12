@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Encoding Fingerprint</title>
+</head>
+<body>
+    <h1>Audio Encoding Fingerprint Hash</h1>
+    <p id="fingerprint">Calculating...</p>
+
+    <script>
+        async function getAudioFingerprint() {
+            const sampleRate = 44100;
+            const duration = 5;
+
+            async function renderAudio() {
+                const context = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, sampleRate * duration, sampleRate);
+
+                const oscillator = context.createOscillator();
+                oscillator.type = "square";
+                oscillator.frequency.value = 1000;
+
+                const compressor = context.createDynamicsCompressor();
+                compressor.threshold.value = -70;
+                compressor.knee.value = 40;
+                compressor.ratio.value = 12;
+                compressor.attack.value = 0;
+                compressor.release.value = 0.25;
+
+                const filter = context.createBiquadFilter();
+                filter.type = "allpass";
+                filter.frequency.value = 5.239622852977861;
+                filter.Q.value = 0.1;
+
+                oscillator.connect(compressor);
+                compressor.connect(filter);
+                filter.connect(context.destination);
+
+                oscillator.start(0);
+
+                return context.startRendering();
+            }
+
+            function extractResult(channelData) {
+                let result = null;
+                let hasVariation = false;
+                for (let i = 0; i < channelData.length; i += Math.floor(channelData.length / 10)) {
+                    if (channelData[i] !== 0) {
+                        if (result === null) {
+                            result = channelData[i];
+                        } else if (result !== channelData[i]) {
+                            hasVariation = true;
+                            break;
+                        }
+                    }
+                }
+                if (result === null) {
+                    result = channelData[channelData.length - 1];
+                } else if (hasVariation) {
+                    let min = Infinity, max = -Infinity;
+                    for (let i = 0; i < channelData.length; i++) {
+                        const value = channelData[i];
+                        if (value !== 0) {
+                            if (value < min) min = value;
+                            if (value > max) max = value;
+                        }
+                    }
+                    result = (min + max) / 2;
+                }
+                return result;
+            }
+
+            function roundToDecimalPlaces(value, decimalPlaces) {
+                if (value === 0) return value;
+                const multiplier = Math.pow(10, decimalPlaces);
+                return Math.round(value * multiplier) / multiplier;
+            }
+
+            function simpleHash(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = (hash << 5) - hash + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return hash;
+            }
+
+            try {
+                const renderedBuffer = await renderAudio();
+                const channelData = renderedBuffer.getChannelData(0);
+                let result = extractResult(channelData);
+                result = roundToDecimalPlaces(result, 6.2); // Use 6.2 as per original code
+                const hash = simpleHash(result.toString());
+                return hash.toString(16);
+            } catch (error) {
+                console.error("Error in audio fingerprinting:", error);
+                return "m"; // Default value in case of error
+            }
+        }
+
+        // Run the function and display the result
+        getAudioFingerprint().then(hash => {
+            document.getElementById('fingerprint').textContent = "Audio encoding fingerprint hash: " + hash;
+        });
+    </script>
+</body>
+</html>
