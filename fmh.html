@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Font Fingerprint Generator</title>
+</head>
+<body>
+    <h1>Font Fingerprint Generator</h1>
+    <p>Your font fingerprint hash: <span id="fingerprintHash">Calculating...</span></p>
+
+    <script>
+    (function() {
+        // List of fonts to test
+        const fontsToTest = [
+            "Arial", "Helvetica", "Times New Roman", "Times", "Courier", "Courier New", "Georgia", 
+            "Palatino", "Garamond", "Bookman", "Comic Sans MS", "Trebuchet MS", "Arial Black", "Impact",
+            "Monospace", "Wingdings 2", "ITC Bodoni 72 Bold", "Menlo", "Gill Sans MT", "Lucida Sans",
+            "Bodoni 72", "Serif", "Shree Devanagari 714", "Microsoft Tai Le", "Nimbus Roman No 9 L",
+            "Candara", "Press Start 2P", "Waseem"
+        ];
+        // Base fonts for comparison
+        const baseFonts = ["monospace", "sans-serif", "serif"];
+        // Test string
+        const testString = "mmMwWLliI0O&1";
+
+        function detectFonts() {
+            const body = document.body;
+            const container = document.createElement("div");
+            container.style.cssText = "position: absolute; left: -9999px; visibility: hidden; display: block !important";
+            
+            const baseFontSpans = {};
+            const testFontSpans = {};
+
+            // Create spans for base fonts
+            baseFonts.forEach(baseFont => {
+                const span = document.createElement("span");
+                span.style.cssText = `font-family: ${baseFont}; font-size: 12px;`;
+                span.textContent = testString;
+                container.appendChild(span);
+                baseFontSpans[baseFont] = span;
+            });
+
+            body.appendChild(container);
+
+            const baseWidths = {};
+            baseFonts.forEach(baseFont => {
+                baseWidths[baseFont] = baseFontSpans[baseFont].offsetWidth;
+            });
+
+            const fontMetrics = {};
+            fontsToTest.forEach(font => {
+                fontMetrics[font] = baseFonts.map(baseFont => {
+                    const span = document.createElement("span");
+                    span.style.cssText = `font-family: ${font}, ${baseFont}; font-size: 12px;`;
+                    span.textContent = testString;
+                    container.appendChild(span);
+                    return span.offsetWidth;
+                });
+            });
+
+            body.removeChild(container);
+            return fontMetrics;
+        }
+
+        // Simple hash function
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return hash >>> 0; // Convert to unsigned 32-bit integer
+        }
+
+        // Function to generate font fingerprint hash
+        function generateFontFingerprint() {
+            const fontMetrics = detectFonts();
+            const metricsString = JSON.stringify(fontMetrics);
+            const hash = simpleHash(metricsString).toString(16).padStart(8, '0');
+            return hash;
+        }
+
+        // Display the hash on the page
+        document.getElementById('fingerprintHash').textContent = generateFontFingerprint();
+    })();
+    </script>
+</body>
+</html>
