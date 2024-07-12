@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Fingerprinting</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Device Fingerprinting Information</h1>
+    <table>
+        <tr>
+            <th>Property</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Touch points bin</td>
+            <td id="touchPointsBin"></td>
+        </tr>
+        <tr>
+            <td>Device pixel ratio</td>
+            <td id="pixelRatio"></td>
+        </tr>
+        <tr>
+            <td>Screen color depth</td>
+            <td id="colorDepth"></td>
+        </tr>
+        <tr>
+            <td>Screen pixel depth</td>
+            <td id="pixelDepth"></td>
+        </tr>
+        <tr>
+            <td>Aspect ratio bin</td>
+            <td id="aspectRatioBin"></td>
+        </tr>
+        <tr>
+            <td>Platform</td>
+            <td id="platform"></td>
+        </tr>
+        <tr>
+            <td>Device memory</td>
+            <td id="deviceMemory"></td>
+        </tr>
+        <tr>
+            <td>Hardware concurrency</td>
+            <td id="hardwareConcurrency"></td>
+        </tr>
+        <tr>
+            <td>Display fingerprint hash</td>
+            <td id="fingerprintHash"></td>
+        </tr>
+    </table>
+
+    <script>
+        async function getDisplayFingerprint() {
+            function getTouchPointsBin() {
+                const maxTouchPoints = navigator.maxTouchPoints || 0;
+                if (maxTouchPoints >= 10) return 3;
+                if (maxTouchPoints >= 5) return 2;
+                if (maxTouchPoints > 0) return 1;
+                return 0;
+            }
+
+            function getDevicePixelRatio() {
+                return window.devicePixelRatio || 1;
+            }
+
+            function getScreenColorDepth() {
+                return window.screen.colorDepth || 0;
+            }
+
+            function getScreenPixelDepth() {
+                return window.screen.pixelDepth || 0;
+            }
+
+            function getAspectRatioBin() {
+                const aspectRatio = window.screen.width / window.screen.height;
+                if (aspectRatio >= 2) return 4;
+                if (aspectRatio >= 1.6) return 3;
+                if (aspectRatio >= 1.33) return 2;
+                if (aspectRatio >= 1) return 1;
+                return 0;
+            }
+
+            function getPlatformInfo() {
+                return navigator.platform || "unknown";
+            }
+
+            function getDeviceMemory() {
+                return navigator.deviceMemory || "unknown";
+            }
+
+            function getHardwareConcurrency() {
+                return navigator.hardwareConcurrency || "unknown";
+            }
+
+            function simpleHash(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash |= 0; // Convert to 32bit integer
+                }
+                return hash;
+            }
+
+            function generateFingerprint() {
+                const touchPointsBin = getTouchPointsBin();
+                const pixelRatio = getDevicePixelRatio();
+                const colorDepth = getScreenColorDepth();
+                const pixelDepth = getScreenPixelDepth();
+                const aspectRatioBin = getAspectRatioBin();
+                const platform = getPlatformInfo();
+                const deviceMemory = getDeviceMemory();
+                const hardwareConcurrency = getHardwareConcurrency();
+
+                console.log("Touch points bin:", touchPointsBin);
+                console.log("Device pixel ratio:", pixelRatio);
+                console.log("Screen color depth:", colorDepth);
+                console.log("Screen pixel depth:", pixelDepth);
+                console.log("Aspect ratio bin:", aspectRatioBin);
+                console.log("Platform:", platform);
+                console.log("Device memory:", deviceMemory);
+                console.log("Hardware concurrency:", hardwareConcurrency);
+
+                const fingerprintString = `${touchPointsBin}-${pixelRatio}-${colorDepth}-${pixelDepth}-${aspectRatioBin}-${platform}-${deviceMemory}-${hardwareConcurrency}`;
+                return simpleHash(fingerprintString).toString(16);
+            }
+
+            try {
+                const touchPointsBin = getTouchPointsBin();
+                const pixelRatio = getDevicePixelRatio();
+                const colorDepth = getScreenColorDepth();
+                const pixelDepth = getScreenPixelDepth();
+                const aspectRatioBin = getAspectRatioBin();
+                const platform = getPlatformInfo();
+                const deviceMemory = getDeviceMemory();
+                const hardwareConcurrency = getHardwareConcurrency();
+                const fingerprintHash = generateFingerprint();
+
+                document.getElementById('touchPointsBin').innerText = touchPointsBin;
+                document.getElementById('pixelRatio').innerText = pixelRatio;
+                document.getElementById('colorDepth').innerText = colorDepth;
+                document.getElementById('pixelDepth').innerText = pixelDepth;
+                document.getElementById('aspectRatioBin').innerText = aspectRatioBin;
+                document.getElementById('platform').innerText = platform;
+                document.getElementById('deviceMemory').innerText = deviceMemory;
+                document.getElementById('hardwareConcurrency').innerText = hardwareConcurrency;
+                document.getElementById('fingerprintHash').innerText = fingerprintHash;
+
+                console.log("Display fingerprint hash:", fingerprintHash);
+            } catch (error) {
+                console.error("Error generating display fingerprint:", error);
+                document.getElementById('fingerprintHash').innerText = "error";
+            }
+        }
+
+        // Run the function and display the result
+        getDisplayFingerprint();
+    </script>
+</body>
+</html>
